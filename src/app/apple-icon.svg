@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <linearGradient id="tally-bg" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="url(#tally-bg)"/>
+  <g stroke="#ffffff" stroke-width="14" stroke-linecap="round">
+    <line x1="56" y1="50" x2="56" y2="130"/>
+    <line x1="82" y1="50" x2="82" y2="130"/>
+    <line x1="108" y1="50" x2="108" y2="130"/>
+    <line x1="134" y1="50" x2="134" y2="130"/>
+    <line x1="40" y1="124" x2="148" y2="56"/>
+  </g>
+</svg>
