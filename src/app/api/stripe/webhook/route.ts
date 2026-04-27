@@ -24,10 +24,14 @@ function tierFromMetadata(metadata: Stripe.Metadata | null | undefined): string 
 }
 
 function buildRecord(sub: Stripe.Subscription): SubscriptionRecord {
-  // current_period_end exists on subscriptions, but live API typings sometimes
-  // type the value loosely. Normalize defensively.
-  const periodEndRaw = (sub as unknown as { current_period_end?: number })
+  // In the 2026-04-22 (Dahlia) API, current_period_end moved off the
+  // Subscription object and onto each subscription item. Read from items
+  // first, then fall back to the legacy top-level field for older payloads.
+  const itemPeriodEnd = sub.items?.data?.[0]?.current_period_end;
+  const legacyPeriodEnd = (sub as unknown as { current_period_end?: number })
     .current_period_end;
+  const periodEndRaw =
+    typeof itemPeriodEnd === "number" ? itemPeriodEnd : legacyPeriodEnd;
   const periodEnd =
     typeof periodEndRaw === "number"
       ? new Date(periodEndRaw * 1000).toISOString()
