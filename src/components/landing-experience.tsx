@@ -19,6 +19,7 @@ import {
   Zap,
 } from "lucide-react";
 import { evaluatePurchaseFit, splitWeighted, travelTimingFor } from "@/lib/finance";
+import { SiteFooter } from "@/components/site-footer";
 
 const features = [
   {
@@ -404,24 +405,7 @@ export function LandingExperience() {
         </div>
       </section>
 
-      <footer className="border-t border-slate-100 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 py-10 text-sm text-slate-700 md:flex-row md:items-center">
-          <div className="flex items-center gap-2 font-semibold text-slate-900">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
-              <Tally5 className="h-4 w-4" strokeWidth={2.5} />
-            </span>
-            Tally
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#demo" className="hover:text-slate-900">Live demo</a>
-            <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>
-            <Link href="/dashboard" className="hover:text-slate-900">Dashboard</Link>
-          </div>
-          <p>&copy; {new Date().getFullYear()} Tally</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

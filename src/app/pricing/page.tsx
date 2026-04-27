@@ -1,11 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Check, Sparkles } from "lucide-react";
 import { tierCapabilities } from "@/lib/entitlements";
 import { pricing, type TierKey } from "@/lib/integrations";
 import { getServerSupabase } from "@/lib/supabase-server";
+import { SiteFooter } from "@/components/site-footer";
+import { legal } from "@/lib/legal";
 
 // Reflects the signed-in user's plan in the CTAs on every visit.
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Pricing — Free, Pro, and Pro+ plans",
+  description: `Start free with Tally Starter. Upgrade to Pro for $${pricing.pro.monthly}/mo for unlimited tracking, real-time travel timing, and accountant-ready exports. Cancel anytime.`,
+  alternates: { canonical: `${legal.siteUrl}/pricing` },
+  openGraph: {
+    title: "Tally pricing — simple, fair plans",
+    description: `Free Starter plan. Pro at $${pricing.pro.monthly}/mo, Pro+ at $${pricing.pro_plus.monthly}/mo.`,
+    url: `${legal.siteUrl}/pricing`,
+  },
+  robots: { index: true, follow: true },
+};
 
 const order: TierKey[] = ["starter", "pro", "pro_plus"];
 
@@ -175,6 +190,8 @@ export default async function PricingPage() {
           );
         })}
       </section>
+
+      <SiteFooter />
     </main>
   );
 }

@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Tally5 } from "lucide-react";
 import { signInWithMagicLink } from "./actions";
+import { legal } from "@/lib/legal";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: `Sign in to ${legal.brand} with a magic link sent to your email. No password required.`,
+  alternates: { canonical: `${legal.siteUrl}/login` },
+  // Login page should not be indexed — it's user-specific and stateful.
+  robots: { index: false, follow: true },
+};
 
 type SearchParams = Promise<{
   error?: string;
