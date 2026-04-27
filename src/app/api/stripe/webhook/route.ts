@@ -15,6 +15,7 @@ type SubscriptionRecord = {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   updated_at: string;
+  user_id?: string;
 };
 
 function tierFromMetadata(metadata: Stripe.Metadata | null | undefined): string {
@@ -23,7 +24,17 @@ function tierFromMetadata(metadata: Stripe.Metadata | null | undefined): string 
   return "pro";
 }
 
-function buildRecord(sub: Stripe.Subscription): SubscriptionRecord {
+function userIdFromMetadata(
+  metadata: Stripe.Metadata | null | undefined,
+): string | null {
+  const id = metadata?.supabase_user_id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+function buildRecord(
+  sub: Stripe.Subscription,
+  userId?: string | null,
+): SubscriptionRecord {
   // In the 2026-04-22 (Dahlia) API, current_period_end moved off the
   // Subscription object and onto each subscription item. Read from items
   // first, then fall back to the legacy top-level field for older payloads.
@@ -40,7 +51,9 @@ function buildRecord(sub: Stripe.Subscription): SubscriptionRecord {
   const customerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-  return {
+  const resolvedUserId = userId ?? userIdFromMetadata(sub.metadata);
+
+  const record: SubscriptionRecord = {
     stripe_customer_id: customerId,
     stripe_subscription_id: sub.id,
     tier: tierFromMetadata(sub.metadata),
@@ -49,12 +62,17 @@ function buildRecord(sub: Stripe.Subscription): SubscriptionRecord {
     cancel_at_period_end: sub.cancel_at_period_end ?? false,
     updated_at: new Date().toISOString(),
   };
+  if (resolvedUserId) record.user_id = resolvedUserId;
+  return record;
 }
 
-async function persistSubscription(sub: Stripe.Subscription) {
+async function persistSubscription(
+  sub: Stripe.Subscription,
+  userId?: string | null,
+) {
   if (!supabaseAdmin) return; // Supabase optional in v1
 
-  const record = buildRecord(sub);
+  const record = buildRecord(sub, userId);
 
   await supabaseAdmin
     .from("subscriptions")
@@ -113,7 +131,12 @@ export async function POST(request: Request) {
               ? session.subscription
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
-          await persistSubscription(sub);
+          // Prefer client_reference_id (set at Checkout creation) which is
+          // the most reliable carrier of the Supabase user_id.
+          const userId =
+            session.client_reference_id ??
+            userIdFromMetadata(session.metadata);
+          await persistSubscription(sub, userId);
         }
         break;
       }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SITE_URL, pricing, priceIdFor, stripe } from "@/lib/integrations";
 import type { TierKey } from "@/lib/integrations";
+import { getServerSupabase } from "@/lib/supabase-server";
 
 function originFor(request: Request): string {
   return request.headers.get("origin") ?? SITE_URL;
@@ -41,12 +42,51 @@ export async function POST(request: Request) {
   const { tier, kind } = await readRequest(request);
   const priceId = priceIdFor(tier);
 
+  // Authenticated user (if any) — used to prefill email and stamp the
+  // subscription with the Supabase user_id via client_reference_id.
+  const supabase = await getServerSupabase();
+  let userId: string | null = null;
+  let email: string | null = null;
+  let existingCustomerId: string | null = null;
+
+  if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      userId = user.id;
+      email = user.email ?? null;
+
+      // Reuse an existing Stripe Customer if we already have one on file so
+      // the user keeps a single billing record across upgrades.
+      const { data: existing } = await supabase
+        .from("subscriptions")
+        .select("stripe_customer_id")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      existingCustomerId =
+        (existing as { stripe_customer_id: string | null } | null)
+          ?.stripe_customer_id ?? null;
+    }
+  }
+
+  // If the visitor isn't signed in, send them to /login first and bring them
+  // back to the same checkout afterwards. Magic-link sign-up + checkout in
+  // one flow.
+  if (!userId) {
+    const loginUrl = new URL("/login", origin);
+    loginUrl.searchParams.set("redirect", `/pricing?upgrade=${tier}`);
+    if (kind === "form") {
+      return NextResponse.redirect(loginUrl.toString(), 303);
+    }
+    return NextResponse.json({ url: loginUrl.toString() }, { status: 401 });
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      // Prefer real Price IDs (managed in the Stripe Dashboard).
-      // Fall back to inline price_data so the app still works the moment
-      // STRIPE_SECRET_KEY is set, before any Products/Prices exist.
       line_items: [
         priceId
           ? { price: priceId, quantity: 1 }
@@ -65,11 +105,18 @@ export async function POST(request: Request) {
       allow_promotion_codes: true,
       billing_address_collection: "auto",
       automatic_tax: { enabled: false },
-      client_reference_id: undefined, // wire to authed user.id once Supabase auth is enabled
+      // Stamp the Supabase user_id onto the session so the webhook can link
+      // the subscription to the right account.
+      client_reference_id: userId,
+      ...(existingCustomerId
+        ? { customer: existingCustomerId }
+        : email
+          ? { customer_email: email }
+          : {}),
       subscription_data: {
-        metadata: { tier },
+        metadata: { tier, supabase_user_id: userId },
       },
-      metadata: { tier },
+      metadata: { tier, supabase_user_id: userId },
       success_url: `${origin}/dashboard?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing?upgrade=cancelled`,
     });
@@ -81,9 +128,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Form posts (the pricing page) need an actual HTTP redirect so the
-    // browser navigates to Stripe Checkout. Programmatic JSON callers get
-    // the URL back so they can do whatever they want with it.
     if (kind === "form") {
       return NextResponse.redirect(session.url, 303);
     }

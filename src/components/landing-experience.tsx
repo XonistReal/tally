@@ -120,13 +120,13 @@ export function LandingExperience() {
           </nav>
           <div className="flex items-center gap-2">
             <Link
-              href="/dashboard"
+              href="/login"
               className="hidden rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 md:inline"
             >
               Sign in
             </Link>
             <Link
-              href="/dashboard"
+              href="/login?redirect=%2Fdashboard"
               className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
             >
               Start free
@@ -158,7 +158,7 @@ export function LandingExperience() {
 
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                href="/dashboard"
+                href="/login?redirect=%2Fdashboard"
                 className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700"
               >
                 Start free <ArrowRight className="h-4 w-4" />

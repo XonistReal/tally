@@ -6,7 +6,9 @@ import {
   ArrowUpRight,
   Banknote,
   Briefcase,
+  CreditCard,
   LayoutDashboard,
+  LogOut,
   Plane,
   Receipt,
   Tally5,
@@ -24,6 +26,7 @@ import {
   TravelTab,
 } from "@/components/dashboard-tabs";
 import { pricing } from "@/lib/integrations";
+import { signOut } from "@/app/login/actions";
 
 const TABS: Array<{ id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -35,26 +38,117 @@ const TABS: Array<{ id: TabId; label: string; icon: React.ComponentType<{ classN
   { id: "receipts", label: "Receipts", icon: Receipt },
 ];
 
-export function DashboardClient() {
+type Subscription = {
+  tier: string;
+  status: string;
+  stripe_customer_id: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean | null;
+} | null;
+
+export function DashboardClient({
+  email,
+  subscription,
+}: {
+  email: string | null;
+  subscription: Subscription;
+}) {
   const [tab, setTab] = useState<TabId>("overview");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const isActive =
+    subscription?.status === "active" || subscription?.status === "trialing";
+  const tier = isActive ? subscription?.tier ?? "starter" : "starter";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4">
           <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm ring-1 ring-indigo-500/40">
               <Tally5 className="h-4 w-4" strokeWidth={2.5} />
             </span>
             <span className="text-lg">Tally</span>
           </Link>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-          >
-            Upgrade to Pro · ${pricing.pro.monthly}/mo
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
+
+          <div className="flex items-center gap-2">
+            {!isActive ? (
+              <Link
+                href="/pricing"
+                className="hidden sm:inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              >
+                Upgrade to Pro · ${pricing.pro.monthly}/mo
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                {pricing[tier as keyof typeof pricing]?.name ?? tier} · active
+              </span>
+            )}
+
+            {email ? (
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen((o) => !o)}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <span className="grid h-6 w-6 place-items-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-700">
+                    {email.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="hidden max-w-[160px] truncate sm:inline">
+                    {email}
+                  </span>
+                </button>
+
+                {menuOpen ? (
+                  <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                    <div className="px-3 py-2 text-xs text-slate-500">
+                      Signed in as
+                      <div className="truncate font-semibold text-slate-900">
+                        {email}
+                      </div>
+                    </div>
+                    <div className="my-1 h-px bg-slate-100" />
+                    {subscription?.stripe_customer_id ? (
+                      <form action="/api/stripe/portal" method="POST">
+                        <button
+                          type="submit"
+                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          <CreditCard className="h-4 w-4" />
+                          Manage billing
+                        </button>
+                      </form>
+                    ) : (
+                      <Link
+                        href="/pricing"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        See plans
+                      </Link>
+                    )}
+                    <form action={signOut}>
+                      <button
+                        type="submit"
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
+                    </form>
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <Link
+                href="/login?redirect=/dashboard"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Sign in
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
