@@ -60,6 +60,14 @@ export function DashboardClient({
     subscription?.status === "active" || subscription?.status === "trialing";
   const tier = isActive ? subscription?.tier ?? "starter" : "starter";
 
+  // Upsell to the next tier above the user's current one. Pro+ is the top
+  // tier, so once you're there we don't show an upsell at all.
+  const upsellTier: "pro" | "pro_plus" | null =
+    tier === "starter" ? "pro" : tier === "pro" ? "pro_plus" : null;
+  const upsellLabel =
+    upsellTier === "pro_plus" ? "Upgrade to Pro+" : "Upgrade to Pro";
+  const upsellPrice = upsellTier ? pricing[upsellTier].monthly : 0;
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-white">
@@ -72,19 +80,20 @@ export function DashboardClient({
           </Link>
 
           <div className="flex items-center gap-2">
-            {!isActive ? (
+            {isActive ? (
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                {pricing[tier as keyof typeof pricing]?.name ?? tier} · active
+              </span>
+            ) : null}
+            {upsellTier ? (
               <Link
                 href="/pricing"
                 className="hidden sm:inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
               >
-                Upgrade to Pro · ${pricing.pro.monthly}/mo
+                {upsellLabel} · ${upsellPrice}/mo
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
-            ) : (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                {pricing[tier as keyof typeof pricing]?.name ?? tier} · active
-              </span>
-            )}
+            ) : null}
 
             {email ? (
               <div className="relative">

@@ -1,17 +1,51 @@
 import Link from "next/link";
 import { ArrowLeft, Check, Sparkles } from "lucide-react";
 import { tierCapabilities } from "@/lib/entitlements";
-import { pricing } from "@/lib/integrations";
+import { pricing, type TierKey } from "@/lib/integrations";
+import { getServerSupabase } from "@/lib/supabase-server";
 
-const order: Array<keyof typeof pricing> = ["starter", "pro", "pro_plus"];
+// Reflects the signed-in user's plan in the CTAs on every visit.
+export const dynamic = "force-dynamic";
 
-const taglines: Record<keyof typeof pricing, string> = {
+const order: TierKey[] = ["starter", "pro", "pro_plus"];
+
+const taglines: Record<TierKey, string> = {
   starter: "Start free with the basics.",
   pro: "Unlock the full Tally.",
   pro_plus: "For teams, families, and accountants.",
 };
 
-export default function PricingPage() {
+const tierRank: Record<TierKey, number> = {
+  starter: 0,
+  pro: 1,
+  pro_plus: 2,
+};
+
+async function getCurrentTier(): Promise<TierKey> {
+  const supabase = await getServerSupabase();
+  if (!supabase) return "starter";
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return "starter";
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("tier, status")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const row = data as { tier?: string; status?: string } | null;
+  if (!row) return "starter";
+  const isActive = row.status === "active" || row.status === "trialing";
+  if (!isActive) return "starter";
+  return row.tier === "pro_plus" ? "pro_plus" : row.tier === "pro" ? "pro" : "starter";
+}
+
+export default async function PricingPage() {
+  const currentTier = await getCurrentTier();
+  const currentRank = tierRank[currentTier];
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
       <div className="border-b border-slate-100 bg-white/80 backdrop-blur">
@@ -43,20 +77,32 @@ export default function PricingPage() {
         {order.map((key) => {
           const plan = pricing[key];
           const featured = key === "pro";
+          const rank = tierRank[key];
+          const isCurrent = rank === currentRank;
+          const isDowngrade = rank < currentRank;
+          const isUpgrade = rank > currentRank;
+
           return (
             <article
               key={key}
               className={`relative rounded-3xl border p-7 shadow-sm ${
-                featured
-                  ? "border-indigo-200 bg-gradient-to-b from-indigo-50 to-white shadow-indigo-100"
-                  : "border-slate-200 bg-white"
+                isCurrent
+                  ? "border-emerald-300 bg-gradient-to-b from-emerald-50 to-white shadow-emerald-100"
+                  : featured
+                    ? "border-indigo-200 bg-gradient-to-b from-indigo-50 to-white shadow-indigo-100"
+                    : "border-slate-200 bg-white"
               }`}
             >
-              {featured && (
+              {isCurrent ? (
+                <span className="absolute -top-3 left-7 rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white shadow">
+                  Your current plan
+                </span>
+              ) : featured ? (
                 <span className="absolute -top-3 left-7 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow">
                   Most popular
                 </span>
-              )}
+              ) : null}
+
               <h2 className="text-2xl font-extrabold">{plan.name}</h2>
               <p className="mt-1 text-sm text-slate-700">{taglines[key]}</p>
               <p className="mt-5 text-5xl font-extrabold tracking-tight">
@@ -73,7 +119,35 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              {key === "starter" ? (
+              {/* CTA logic */}
+              {isCurrent ? (
+                key === "starter" ? (
+                  <Link
+                    href="/dashboard"
+                    className="mt-7 inline-flex w-full items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Open dashboard
+                  </Link>
+                ) : (
+                  <form action="/api/stripe/portal" method="post" className="mt-7">
+                    <button
+                      type="submit"
+                      className="w-full rounded-full border border-emerald-300 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                    >
+                      Manage billing
+                    </button>
+                  </form>
+                )
+              ) : isDowngrade ? (
+                <form action="/api/stripe/portal" method="post" className="mt-7">
+                  <button
+                    type="submit"
+                    className="w-full rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Switch in billing portal
+                  </button>
+                </form>
+              ) : key === "starter" ? (
                 <Link
                   href="/dashboard"
                   className="mt-7 inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800"
@@ -91,7 +165,9 @@ export default function PricingPage() {
                         : "bg-slate-900 text-white hover:bg-slate-800"
                     }`}
                   >
-                    Upgrade to {plan.name}
+                    {isUpgrade && currentRank > 0
+                      ? `Upgrade to ${plan.name}`
+                      : `Get ${plan.name}`}
                   </button>
                 </form>
               )}
