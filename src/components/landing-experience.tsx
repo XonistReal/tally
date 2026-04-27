@@ -199,8 +199,8 @@ export function LandingExperience() {
             </ul>
           </div>
 
-          <div className="relative">
-            <div className="float-soft mx-auto w-full max-w-md rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-indigo-100">
+          <div className="relative mx-auto w-full max-w-md pb-10 pt-8 md:pb-14 md:pt-12">
+            <div className="float-soft rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl shadow-indigo-100">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">Purchase fit</p>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${fitColor}`}>
@@ -219,13 +219,13 @@ export function LandingExperience() {
               </div>
             </div>
 
-            <div className="absolute -left-6 top-10 hidden rotate-[-6deg] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:block">
+            <div className="absolute -left-4 -top-2 z-10 hidden -rotate-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:-left-12 md:block">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">Travel timing</p>
               <p className="mt-1 text-lg font-bold">{travel.label}</p>
               <p className="text-xs text-slate-700">{travel.score}% confidence</p>
             </div>
 
-            <div className="absolute -bottom-4 right-0 hidden rotate-[5deg] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:block">
+            <div className="absolute -bottom-2 -right-4 z-10 hidden rotate-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl md:-right-10 md:block">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">Split fairly</p>
               <p className="mt-1 text-lg font-bold">${(deposit / sampleSplit.length).toFixed(0)}/person</p>
               <p className="text-xs text-slate-700">Across {sampleSplit.length} people</p>
