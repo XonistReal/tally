@@ -8,6 +8,15 @@ import { legal } from "@/lib/legal";
  * /dashboard, /login, /auth/*, and /api/* are intentionally excluded — they
  * are user-specific or programmatic and should not be in search results.
  */
+const featureSlugs = [
+  "purchase-fit-check",
+  "cash-tracker",
+  "expense-splitter",
+  "packing-list",
+  "travel-timing",
+  "receipt-tracker",
+] as const;
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = legal.siteUrl;
   const lastModified = new Date(legal.effectiveDate);
@@ -25,6 +34,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.9,
     },
+    {
+      url: `${base}/features`,
+      lastModified,
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    ...featureSlugs.map((slug) => ({
+      url: `${base}/features/${slug}`,
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    })),
     {
       url: `${base}/terms`,
       lastModified,

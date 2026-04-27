@@ -22,13 +22,10 @@ export const legal = {
     "https://www.tallyfinance.online",
 
   /**
-   * IMPORTANT — UPDATE BEFORE PUBLIC LAUNCH.
-   * State/jurisdiction whose laws govern the Terms of Service. If you form a
-   * Delaware LLC via Stripe Atlas, change this to "Delaware". Otherwise use
-   * the state where the business is registered. Leaving this blank will make
-   * the Terms display a visible "[YOUR STATE]" placeholder.
+   * State whose laws govern the Terms of Service. Update if you later form
+   * an LLC in a different state (e.g. Delaware via Stripe Atlas).
    */
-  governingState: "[YOUR STATE]",
+  governingState: "Ohio",
 
   /**
    * Last time the legal documents were materially updated. Bump this whenever

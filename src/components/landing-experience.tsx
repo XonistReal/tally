@@ -114,7 +114,7 @@ export function LandingExperience() {
             <span className="text-lg">Tally</span>
           </Link>
           <nav className="hidden items-center gap-7 text-sm text-slate-700 md:flex">
-            <a href="#features" className="hover:text-slate-900">Features</a>
+            <Link href="/features" className="hover:text-slate-900">Features</Link>
             <a href="#how" className="hover:text-slate-900">How it works</a>
             <a href="#demo" className="hover:text-slate-900">Live demo</a>
             <Link href="/pricing" className="hover:text-slate-900">Pricing</Link>

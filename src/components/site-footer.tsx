@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Tally5 } from "lucide-react";
 import { legal } from "@/lib/legal";
+import { CookiePreferencesLink } from "@/components/cookie-preferences-link";
 
 /**
  * Public site footer. Used on the landing page, pricing page, and all legal
@@ -47,6 +48,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/features" className="hover:text-slate-900">
+                  Features
+                </Link>
+              </li>
+              <li>
                 <Link href="/pricing" className="hover:text-slate-900">
                   Pricing
                 </Link>
@@ -83,6 +89,9 @@ export function SiteFooter() {
                 <Link href="/refunds" className="hover:text-slate-900">
                   Refund Policy
                 </Link>
+              </li>
+              <li>
+                <CookiePreferencesLink />
               </li>
               <li>
                 <a
